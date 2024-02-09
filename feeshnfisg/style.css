@@ -1,0 +1,56 @@
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    background-color: #def;
+    overflow: hidden;
+}
+#notes > div {
+    display: inline-block;
+    width: 7vw;
+    height: 7vw;
+    background-color: #fff;
+    border-style: solid;
+    border-width: 2px;
+    border-color: #000;
+    margin-left: 1vw;
+    margin-top: 10px;
+    padding: 10px;
+    
+    position: relative; /* the note warnings will be positioned relative to this now, bc static elements don't count as positioned parents */
+}
+#notes > div.note-on {
+    background-color: #000;
+    color: white;
+}
+#f-key {
+    margin-right: calc(8vw + 4px) !important;
+}
+
+div.note-icon {
+    border: 2px solid rebeccapurple;
+    background-color: white;
+
+    box-sizing: border-box;    
+    width: calc(7vw + 20px);
+    height: calc(7vw + 20px);
+
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+.hidden {
+    display: none;
+}
+
+#score.gg {
+    margin: 0;
+    position: fixed;
+    background-color: black;
+    color: white;
+    font-size: 3rem;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
