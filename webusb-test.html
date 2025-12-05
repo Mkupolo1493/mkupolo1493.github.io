@@ -1,0 +1,17 @@
+<html>
+  <head>
+    <title>WebUSB test</title>
+  </head>
+  <body>
+    <h2>you have loaded this page at your own risk</h2>
+    <h3>(you're probably fine)</h3>
+    <script>
+      navigator.usb.getDevices().then((devices) => {
+        devices.forEach((device) => {
+          console.log(device.productName); // "Arduino Micro"
+          console.log(device.manufacturerName); // "Arduino LLC"
+        });
+      });
+    </script>
+  </body>
+</html>
