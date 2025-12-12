@@ -1,17 +1,61 @@
 <html>
-  <head>
-    <title>WebUSB test</title>
-  </head>
-  <body>
-    <h2>you have loaded this page at your own risk</h2>
-    <h3>(you're probably fine)</h3>
-    <script>
-      navigator.usb.getDevices().then((devices) => {
-        devices.forEach((device) => {
-          console.log(device.productName); // "Arduino Micro"
-          console.log(device.manufacturerName); // "Arduino LLC"
-        });
-      });
-    </script>
-  </body>
+    <head>
+        <title>WebSerial Prototype</title>
+        <style>
+            
+        </style>
+    </head>
+    <body>
+        <h1>The Hygroscopinator</h1>
+        <h2>~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~</h2>
+        <div class="sensor" id="humidity">
+            <h3>Soil Humidity</h3>
+            <div class="log">sybau 💔</div>
+        </div>
+        <div class="sensor" id="luminosity">
+            <h3>Light</h3>
+            <div class="log">sybau 💔</div>
+        </div>
+        <div class="sensor" id="protonicity">
+            <h3>pH</h3>
+            <div class="log">sybau 💔</div>
+        </div>
+        <script type="module">
+            if (!("serial" in navigator)) {
+                alert("what cooked ahh browser are we on");
+                throw "🐟";
+            }
+            
+            let port;
+            let w;
+            
+            try {
+                /*navigator.usb.getDevices().then((devices) => {
+                devices.forEach((device) => {
+                console.log(device.productName); // "Arduino Uno"
+                console.log(device.manufacturerName); // "Arduino LLC"
+                });
+                });*/
+                port = await navigator.serial.requestPort();
+                
+                await port.open({baudRate: 9600});
+            }
+            catch (🐟) {
+                alert("Connection terminated.", 🐟);
+            }
+
+            function onRX(data) {
+                const [sensor, value] = data.split(':3');
+                sensorChange(sensor, value);
+            }
+            
+            function sensorChange(sensor, data) {
+                const div = document.getElementById(sensor);
+                const log = div.getElementsByClassName("log")[0];
+                log.append(`\n${data}`);
+            }
+            
+            window.exe = e => eval(e);
+        </script>
+    </body>
 </html>
