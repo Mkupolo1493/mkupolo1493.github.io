@@ -20,11 +20,20 @@
             <h3>pH</h3>
             <div class="log">sybau 💔</div>
         </div>
+        <h2>~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~</h2>
+        <!-- Step 1: include our secure javascript file -->
+        <script src="https://www.desmos.com/api/v1.11/calculator.js?apiKey=70d530c75bc2432bbfc6dce64cf7fb0e"></script>
+        
+        <!-- Step 2: add an element to the page -->
+        <div id="calculator" style="width: 600px; height: 400px;"></div>
         <script type="module">
             if (!("serial" in navigator)) {
                 alert("what cooked ahh browser are we on");
                 throw "🐟";
             }
+
+            var elt = document.getElementById('calculator');
+            var calculator = Desmos.GraphingCalculator(elt);
             
             let port;
             let w;
