@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WebSerial Prototype</title>
+        <!-- <meta http-equiv="Content-Security-Policy" content="script-src 'https://www.desmos.com' 'unsafe-eval' 'unsafe-inline';"> -->
+        <style>
+        </style>
+        <script src="https://www.desmos.com/api/v1.11/calculator.js?apiKey=70d530c75bc2432bbfc6dce64cf7fb0e"></script>
+    </head>
+    <body>
+        <h1>The Hygroscopinator</h1>
+        <h2>~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~</h2>
+        <div class="sensor" id="humidity">
+            <h3>Soil Humidity</h3>
+            <div class="log">sybau 💔</div>
+            <div class="calculator" style="width: 600px; height: 400px;"></div>
+        </div>
+        <div class="sensor" id="luminosity">
+            <h3>Light</h3>
+            <div class="log">sybau 💔</div>
+            <div class="calculator" style="width: 600px; height: 400px;"></div>
+        </div>
+        <div class="sensor" id="protonicity">
+            <h3>pH</h3>
+            <div class="log">sybau 💔</div>
+            <div class="calculator" style="width: 600px; height: 400px;"></div>
+        </div>
+        <h2>~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~</h2>
+        <script type="module">
+            if (!("serial" in navigator)) {
+                alert("what cooked ahh browser are we on");
+                throw "🐟";
+            }
+
+            const calcElems = {
+                hp: document.getElementsByClassName("calculator")[0],
+                light: document.getElementsByClassName("calculator")[1],
+                ph: document.getElementsByClassName("calculator")[2]
+            };
+            const calc = {
+                hp: Desmos.GraphingCalculator(calcElems.hp, {expressions: false, settingsMenu: false, lockViewport: true}),
+                light: Desmos.GraphingCalculator(calcElems.light, {expressions: false, settingsMenu: false, lockViewport: true}),
+                ph: Desmos.GraphingCalculator(calcElems.ph, {expressions: false, settingsMenu: false, lockViewport: true}),
+            };
+            
+            [...document.getElementsByClassName("dcg-graphpaper-branding")].forEach(j => j.remove());
+
+            const startAllTarget = window;
+            startAllTarget.addEventListener("keydown", startAll);
+            
+            async function startAll() {
+                let port;
+                let w;
+                
+                try {
+                    //navigator.usb.getDevices().then((devices) => {
+                    //devices.forEach((device) => {
+                    //console.log(device.productName); // "Arduino Uno"
+                    //console.log(device.manufacturerName); // "Arduino LLC"
+                    //});
+                    //});
+                    port = await navigator.serial.requestPort();
+                    
+                    await port.open({baudRate: 9600});
+                }
+                catch (e) {
+                    alert(`Connection terminated. ${e}`);
+                }
+                finally {
+                    startAllTarget.removeEventListener("keydown", startAll);
+                }
+            }
+
+            
+
+            function onRX(data) {
+                const [sensor, value] = data.split(':3');
+                sensorChange(sensor, value);
+            }
+            
+            function sensorChange(sensor, data) {
+                const div = document.getElementById(sensor);
+                const log = div.getElementsByClassName("log")[0];
+                log.append(`\n${data}`);
+            }
+            
+            window.exe = e => eval(e);
+        </script>
+    </body>
+</html>
