@@ -12,17 +12,17 @@
         <h2>~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~</h2>
         <div class="sensor" id="humidity">
             <h3>Soil Humidity</h3>
-            <div class="log">sybau 💔</div>
+            <div class="log">(H%)</div>
             <div class="calculator" style="width: 600px; height: 400px;"></div>
         </div>
         <div class="sensor" id="luminosity">
             <h3>Light</h3>
-            <div class="log">sybau 💔</div>
+            <div class="log">(light)</div>
             <div class="calculator" style="width: 600px; height: 400px;"></div>
         </div>
         <div class="sensor" id="protonicity">
             <h3>pH</h3>
-            <div class="log">sybau 💔</div>
+            <div class="log">(pH)</div>
             <div class="calculator" style="width: 600px; height: 400px;"></div>
         </div>
         <h2>~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~</h2>
@@ -42,11 +42,17 @@
                 light: Desmos.GraphingCalculator(calcElems.light, {expressions: false, settingsMenu: false, lockViewport: true}),
                 ph: Desmos.GraphingCalculator(calcElems.ph, {expressions: false, settingsMenu: false, lockViewport: true}),
             };
+
+            const allData = {
+                hp: {points: [], color: Desmos.Colors.BLUE},
+                light: {points: [], color: Desmos.Colors.ORANGE},
+                ph: {points: [], color: Desmos.Colors.PURPLE}
+            };
             
             [...document.getElementsByClassName("dcg-graphpaper-branding")].forEach(j => j.remove());
 
             const startAllTarget = window;
-            startAllTarget.addEventListener("keydown", startAll);
+            startAllTarget.addEventListener("dblclick", startAll);
             
             async function startAll() {
                 let port;
@@ -71,17 +77,94 @@
                 }
             }
 
-            
+            var startTime = "unset";
 
             function onRX(data) {
-                const [sensor, value] = data.split(':3');
+                const [sensor, value] = data.split(': ');
                 sensorChange(sensor, value);
             }
             
             function sensorChange(sensor, data) {
                 const div = document.getElementById(sensor);
-                const log = div.getElementsByClassName("log")[0];
+                const thisCalc = calc[sensor];
+                const sensorData = allData[sensor];
+                const log = calcElems[sensor].previousElementSibling;
+
+                if (!thisCalc || !sensorData || !log) {
+                    console.error(`sensor DNE: ${sensor}`);
+                }
+                
                 log.append(`\n${data}`);
+
+                if (startTime === "unset") startTime = Date.now()
+
+                const timeElapsed = (Date.now() - startTime) / 1000;
+
+                sensorData.points.push([timeElapsed, data]);
+
+                thisCalc.setExpression({
+                    id: "sensor_data",
+                    type: "table",
+                    columns: [
+                        {
+                            latex: "x_1",
+                            values: sensorData.points.map(p => p[0])
+                        },
+                        {
+                            latex: "y_1",
+                            values: sensorData.points.map(p => p[1]),
+                            color: sensorData.color,
+                            lines: true,
+                            points: true
+                        }
+                    ]
+                });
+
+                rescaleView(thisCalc, sensorData.points, sensor)
+            }
+
+            function rescaleView(calculatorInstance, points, sensorName) {
+                if (points.length === 0) return;
+                
+                // Extract separate X and Y arrays
+                const xValues = points.map(p => p[0]);
+                const yValues = points.map(p => p[1]);
+                
+                // Find mins and maxs
+                const minX = Math.min(...xValues);
+                const maxX = Math.max(...xValues);
+                const minY = Math.min(...yValues);
+                const maxY = Math.max(...yValues);
+                
+                // Add padding (margin) so points aren't exactly on the edge
+                // Defaulting to 1 if there's no range (single point)
+                const paddingX = (maxX - minX) * 0.1 || 1; 
+                const paddingY = (maxY - minY) * 0.1 || 1;
+
+                if (sensorName === "ph") {
+                    calculatorInstance.setMathBounds({
+                        left: minX - paddingX,
+                        right: maxX + paddingX,
+                        bottom: -1,
+                        top: 15
+                    });
+                }
+                else if (sensorName === "hp") {
+                    calculatorInstance.setMathBounds({
+                        left: minX - paddingX,
+                        right: maxX + paddingX,
+                        bottom: -10,
+                        top: 110
+                    });
+                }
+                else {
+                    calculatorInstance.setMathBounds({
+                        left: minX - paddingX,
+                        right: maxX + paddingX,
+                        bottom: minY - paddingY,
+                        top: maxY + paddingY
+                    });
+                }
             }
             
             window.exe = e => eval(e);
