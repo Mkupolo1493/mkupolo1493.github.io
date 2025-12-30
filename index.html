@@ -82,17 +82,17 @@
                     //console.log(device.manufacturerName); // "Arduino LLC"
                     //});
                     //});
-                    const mfkPort = await navigator.serial.requestPort();
+                    window.mfkPort = await navigator.serial.requestPort();
                     
-                    await port.open({baudRate: 9600});
+                    await window.mfkPort.open({baudRate: 9600});
 
                     window.mfkReader = mfkPort.readable.getReader();
 
-                    setInterval(readDevice, 167);
+                    setInterval(readDevice, 267);
                 }
                 catch (e) {
                     console.error(`Connection terminated. ${e}`);
-                    setInterval(inSilico, 1670);
+                    setInterval(inSilico, 2670);
                 }
                 finally {
                     startAllTarget.remove();
@@ -100,7 +100,7 @@
             }
 
             async function readDevice() {
-                while (port.readable) {
+                while (window.mfkPort.readable) {
                     const {value, finish} = await window.mfkReader.read();
                     if (finish) {
                         window.mfkReader.releaseLock();
