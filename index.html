@@ -2,27 +2,47 @@
 <html>
     <head>
         <title>WebSerial Prototype</title>
-        <!-- <meta http-equiv="Content-Security-Policy" content="script-src 'https://www.desmos.com' 'unsafe-eval' 'unsafe-inline';"> -->
         <style>
+            .log {
+                white-space: pre-wrap;
+                width: 30rem;
+                height: 10rem;
+                overflow-y: auto;
+            }
+            .aesthetic-btn {
+                background-color: transparent;
+                border: 5px outset #AAAAAA;
+                border-radius: 1rem;
+                padding: 2rem 6rem;
+                font-size: 2rem;
+                color: transparent;
+                text-shadow: 0 0 #373737;
+            }
+            .aesthetic-btn:active {
+                border-style: inset;
+                background-color: #67676737;
+                text-shadow: 1px 1px black;
+            }
         </style>
         <script src="https://www.desmos.com/api/v1.11/calculator.js?apiKey=70d530c75bc2432bbfc6dce64cf7fb0e"></script>
     </head>
     <body>
         <h1>The Hygroscopinator</h1>
         <h2>~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~</h2>
+        <button class="aesthetic-btn" id="launch">Launch</button>
         <div class="sensor" id="humidity">
             <h3>Soil Humidity</h3>
-            <div class="log">(H%)</div>
+            <div class="log">[soil humidity input log]</div>
             <div class="calculator" style="width: 600px; height: 400px;"></div>
         </div>
         <div class="sensor" id="luminosity">
             <h3>Light</h3>
-            <div class="log">(light)</div>
+            <div class="log">[light level input log]</div>
             <div class="calculator" style="width: 600px; height: 400px;"></div>
         </div>
         <div class="sensor" id="protonicity">
             <h3>pH</h3>
-            <div class="log">(pH)</div>
+            <div class="log">[pH input log]</div>
             <div class="calculator" style="width: 600px; height: 400px;"></div>
         </div>
         <h2>~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~</h2>
@@ -51,13 +71,10 @@
             
             [...document.getElementsByClassName("dcg-graphpaper-branding")].forEach(j => j.remove());
 
-            const startAllTarget = window;
-            startAllTarget.addEventListener("dblclick", startAll);
+            const startAllTarget = document.getElementById("launch");
+            startAllTarget.addEventListener("click", startAll);
             
             async function startAll() {
-                let port;
-                let w;
-                
                 try {
                     //navigator.usb.getDevices().then((devices) => {
                     //devices.forEach((device) => {
@@ -65,21 +82,64 @@
                     //console.log(device.manufacturerName); // "Arduino LLC"
                     //});
                     //});
-                    port = await navigator.serial.requestPort();
+                    const mfkPort = await navigator.serial.requestPort();
                     
                     await port.open({baudRate: 9600});
+
+                    window.mfkReader = mfkPort.readable.getReader();
+
+                    setInterval(readDevice, 167);
                 }
                 catch (e) {
-                    alert(`Connection terminated. ${e}`);
+                    console.error(`Connection terminated. ${e}`);
+                    setInterval(inSilico, 1670);
                 }
                 finally {
-                    startAllTarget.removeEventListener("keydown", startAll);
+                    startAllTarget.remove();
                 }
+            }
+
+            async function readDevice() {
+                while (port.readable) {
+                    const {value, finish} = await window.mfkReader.read();
+                    if (finish) {
+                        window.mfkReader.releaseLock();
+                        break;
+                    }
+
+                    if (value) {
+                        // for every byte
+                        for (let i = 0; i < value.length; i++) {
+                            // convert to ascii
+                            const char = String.fromCharCode(value[i]);
+        
+                            // delimiters: \n, !
+                            if (char === '\n' || char === '!') {
+                                // must have a colon
+                                if (window.mfkBuffer.includes(':')) {
+                                    onRX(window.mfkBuffer);
+                                }
+                                
+                                window.mfkBuffer = "";
+                                
+                            } else {
+                                window.mfkBuffer += char;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function inSilico() {
+                onRX(`hp: ${Math.random() * 10 + 50}`);
+                onRX(`light: ${Math.random() ** 2 * 0.3}`);
+                onRX(`ph: ${Math.random() ** 2 * 1.2 + 6.3}`);
             }
 
             var startTime = "unset";
 
             function onRX(data) {
+                console.log(data);
                 const [sensor, value] = data.split(': ');
                 sensorChange(sensor, value);
             }
@@ -155,6 +215,14 @@
                         right: maxX + paddingX,
                         bottom: -10,
                         top: 110
+                    });
+                }
+                else if (sensorName === "light") {
+                    calculatorInstance.setMathBounds({
+                        left: minX - paddingX,
+                        right: maxX + paddingX,
+                        bottom: -0.1,
+                        top: 1.1
                     });
                 }
                 else {
